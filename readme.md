@@ -29,6 +29,8 @@ job-queue-processor/
 ├── docker-compose.yml
 └── README.md
 ```
+## Architecture/Design
+![Diagram](ss/system-diagram.png)
 
 ## Quick Start
 
