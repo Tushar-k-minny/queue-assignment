@@ -35,7 +35,7 @@ job-queue-processor/
 ### 1. Clone and Setup
 
 ```bash
- git clone {url} <filename>
+ git clone https://github.com/Tushar-k-minny/queue-assignment `file-path`
 ```
 
 ### 2. Install Dependencies
