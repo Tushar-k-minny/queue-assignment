@@ -1,0 +1,160 @@
+services:
+  # Database for User Service
+  user-db:
+    # Typo corrected: 'postgress' -> 'postgres'
+    image: postgres:15-alpine
+    container_name: user-db
+    environment:
+      # Rectified: Missing space/colon after key
+      POSTGRES_USER: tushar
+      # Corrected key typo: 'POSTGES_PASSWORD' -> 'POSTGRES_PASSWORD'
+      POSTGRES_PASSWORD: tushar0134
+      POSTGRES_DB: user_db
+    ports:
+      - 5432:5432
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tushar -d user_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Database for Job Service
+  job-db:
+    # Typo corrected: 'postgress' -> 'postgres'
+    image: postgres:15-alpine
+    container_name: job-db
+    # Rectified: Used a list format for environment variables for consistency and clarity
+    environment:
+      POSTGRES_USER: tushar
+      # Corrected key typo: 'POSTGES_PASSWORD' -> 'POSTGRES_PASSWORD'
+      POSTGRES_PASSWORD: tushar0134
+      POSTGRES_DB: job_db
+    ports:
+      - 5433:5432
+    volumes:
+      - job_db_data:/var/lib/postgresql/data
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tushar -d job_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq-service
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      # Rectified: Missing space/colon after key
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    networks:
+      - microservice-network
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      # Rectified: The healthcheck test should be a list in YAML
+      test: ['CMD', 'rabbitmq-diagnostics', 'status']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User API Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    environment:
+      # Rectified: Missing space/colon after key
+      PORT: 5001
+      NODE_ENV: production
+      DB_URL: postgresql://tushar:tushar0134@user-db:5432/user_db
+      ACCESS_TOKEN_SECRET: a-secret-access-token-with-date-3-10@2025
+      REFRESH_TOKEN_SECRET: a-refrest-access-token-with-date-3-10@2025
+    ports:
+      - 5001:5001
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - microservice-network
+    restart: unless-stopped
+    # Rectified: Removed extra space in 'node  src/app.js'
+    command: sh -c "npx prisma migrate deploy && node src/app.js"
+
+  # Job API Service
+  job-service:
+    build:
+      context: ./job-service
+      dockerfile: Dockerfile
+    container_name: job-service
+    # Rectified: The environment block was poorly formatted; fixed to list format
+    environment:
+      PORT: 5002
+      NODE_ENV: production
+      DB_URL: postgresql://tushar:tushar0134@job-db:5432/job_db
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_QUEUE: job_queue
+
+    ports:
+      - 5002:5002
+    depends_on:
+      job-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+    networks:
+      - microservice-network
+    restart: unless-stopped
+    # Rectified: Removed extra space in 'node  src/app.js'
+    command: sh -c "npx prisma migrate deploy && node src/app.js"
+
+  # Worker Service
+  worker-service:
+    build:
+      context: ./worker-service
+      dockerfile: Dockerfile
+    # container_name: worker-service
+    environment:
+      NODE_ENV: production
+      DB_URL: postgresql://tushar:tushar0134@job-db:5432/job_db
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_QUEUE: job_queue
+      PREFETCH_COUNT: 1
+      JOB_SERVICE_URL: http://job-service:5002
+      MAX_RETRIES: 5
+      RETRY_DELAY: 5000
+    # ports:
+    #   - 5003:5003
+    depends_on:
+      job-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+     
+    networks:
+      - microservice-network
+    restart: unless-stopped
+    command: sh -c "node src/index.js"
+
+volumes:
+  user_db_data:
+    driver: local
+  job_db_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  microservice-network:
+    driver: bridge
