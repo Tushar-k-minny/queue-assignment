@@ -29,6 +29,8 @@ job-queue-processor/
 ├── docker-compose.yml
 └── README.md
 ```
+## Architecture/Design
+![Diagram](ss/system-diagram.png)
 
 ## Quick Start
 
@@ -105,7 +107,7 @@ pnpm dev
 ### 1. Register a User
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:5001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -117,7 +119,7 @@ curl -X POST http://localhost:3000/auth/register \
 ### 2. Login
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:5001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -132,7 +134,7 @@ export TOKEN="your-jwt-token-here"
 
 ```bash
 # Reverse string job
-curl -X POST http://localhost:8000/jobs \
+curl -X POST http://localhost:5002/jobs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -171,7 +173,7 @@ curl http://localhost:5002/jobs/JOB_ID \
 ### 5. List All Jobs
 
 ```bash
-curl "http://localhost:8000/jobs" \
+curl "http://localhost:5002/jobs" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -179,7 +181,7 @@ curl "http://localhost:8000/jobs" \
 
 ```bash
 # Uppercase text
-curl -X POST http://localhost:8000/jobs \
+curl -X POST http://localhost:5002/jobs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -188,7 +190,7 @@ curl -X POST http://localhost:8000/jobs \
   }'
 
 # Fibonacci calculation
-curl -X POST http://localhost:8000/jobs \
+curl -X POST http://localhost:5002/jobs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
