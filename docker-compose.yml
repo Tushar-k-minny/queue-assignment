@@ -1,13 +1,10 @@
 services:
   # Database for User Service
   user-db:
-    # Typo corrected: 'postgress' -> 'postgres'
     image: postgres:15-alpine
     container_name: user-db
     environment:
-      # Rectified: Missing space/colon after key
       POSTGRES_USER: tushar
-      # Corrected key typo: 'POSTGES_PASSWORD' -> 'POSTGRES_PASSWORD'
       POSTGRES_PASSWORD: tushar0134
       POSTGRES_DB: user_db
     ports:
@@ -24,13 +21,10 @@ services:
 
   # Database for Job Service
   job-db:
-    # Typo corrected: 'postgress' -> 'postgres'
     image: postgres:15-alpine
     container_name: job-db
-    # Rectified: Used a list format for environment variables for consistency and clarity
     environment:
       POSTGRES_USER: tushar
-      # Corrected key typo: 'POSTGES_PASSWORD' -> 'POSTGRES_PASSWORD'
       POSTGRES_PASSWORD: tushar0134
       POSTGRES_DB: job_db
     ports:
@@ -53,7 +47,6 @@ services:
       - '5672:5672'
       - '15672:15672'
     environment:
-      # Rectified: Missing space/colon after key
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin123
     networks:
@@ -61,7 +54,6 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      # Rectified: The healthcheck test should be a list in YAML
       test: ['CMD', 'rabbitmq-diagnostics', 'status']
       interval: 10s
       timeout: 5s
@@ -74,7 +66,6 @@ services:
       dockerfile: Dockerfile
     container_name: user-service
     environment:
-      # Rectified: Missing space/colon after key
       PORT: 5001
       NODE_ENV: production
       DB_URL: postgresql://tushar:tushar0134@user-db:5432/user_db
@@ -88,7 +79,6 @@ services:
     networks:
       - microservice-network
     restart: unless-stopped
-    # Rectified: Removed extra space in 'node  src/app.js'
     command: sh -c "npx prisma migrate deploy && node src/app.js"
 
   # Job API Service
@@ -97,7 +87,7 @@ services:
       context: ./job-service
       dockerfile: Dockerfile
     container_name: job-service
-    # Rectified: The environment block was poorly formatted; fixed to list format
+
     environment:
       PORT: 5002
       NODE_ENV: production
@@ -116,7 +106,7 @@ services:
     networks:
       - microservice-network
     restart: unless-stopped
-    # Rectified: Removed extra space in 'node  src/app.js'
+
     command: sh -c "npx prisma migrate deploy && node src/app.js"
 
   # Worker Service
@@ -124,7 +114,6 @@ services:
     build:
       context: ./worker-service
       dockerfile: Dockerfile
-    # container_name: worker-service
     environment:
       NODE_ENV: production
       DB_URL: postgresql://tushar:tushar0134@job-db:5432/job_db
@@ -134,14 +123,13 @@ services:
       JOB_SERVICE_URL: http://job-service:5002
       MAX_RETRIES: 5
       RETRY_DELAY: 5000
-    # ports:
-    #   - 5003:5003
+
     depends_on:
       job-db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-     
+
     networks:
       - microservice-network
     restart: unless-stopped
