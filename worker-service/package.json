@@ -1,11 +1,14 @@
 {
   "name": "worker-service",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon  --env-file=.env src/index.js"
+    "build": "tsc",
+    "dev": "tsx --env-file=.env src/index.ts",
+    "start": "node --env-file=.env dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -15,8 +18,11 @@
     "amqplib": "^0.10.9",
     "axios": "^1.12.2"
   },
-  "type": "module",
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^24.7.0",
+    "nodemon": "^3.1.10",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }
