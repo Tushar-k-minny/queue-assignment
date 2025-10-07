@@ -44,8 +44,8 @@ services:
     image: rabbitmq:3.12-management-alpine
     container_name: rabbitmq-service
     ports:
-      - '5672:5672'
-      - '15672:15672'
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin123
@@ -79,7 +79,7 @@ services:
     networks:
       - microservice-network
     restart: unless-stopped
-    command: sh -c "npx prisma migrate deploy && node src/app.js"
+    command: sh -c "npx prisma migrate deploy && node dist/app.js"
 
   # Job API Service
   job-service:
@@ -94,6 +94,8 @@ services:
       DB_URL: postgresql://tushar:tushar0134@job-db:5432/job_db
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
       RABBITMQ_QUEUE: job_queue
+      ACCESS_TOKEN_SECRET: a-secret-access-token-with-date-3-10@2025
+      USER_SERVICE_URL: http://user-service:5001
 
     ports:
       - 5002:5002
@@ -106,8 +108,7 @@ services:
     networks:
       - microservice-network
     restart: unless-stopped
-
-    command: sh -c "npx prisma migrate deploy && node src/app.js"
+    command: sh -c "npx prisma migrate deploy && node dist/app.js"
 
   # Worker Service
   worker-service:
@@ -133,7 +134,7 @@ services:
     networks:
       - microservice-network
     restart: unless-stopped
-    command: sh -c "node src/index.js"
+    command: node dist/index.js
 
 volumes:
   user_db_data:
