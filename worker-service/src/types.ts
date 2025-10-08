@@ -1,18 +1,18 @@
 export interface Job {
-  id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  result?: string;
-  createdAt: Date;
-  updatedAt: Date;
+	id: string;
+	title: string;
+	description: string;
+	status: "QUEUED" | "INPROGRESS" | "COMPLETED" | "FAILED";
+	result?: string;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 export interface ProcessedJob extends Job {
-  result: string;
+	result: string;
 }
 
 export interface ErrorResponse {
-  message: string;
-  stack?: string;
+	message: string;
+	stack?: string;
 }

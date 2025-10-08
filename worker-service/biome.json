@@ -7,11 +7,11 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**/*", "!node_modules/**/*", "!dist/**/*"]
+    "includes": ["**", "!node_modules/**/*", "!dist/**/*"]
   },
   "formatter": {
     "enabled": true,
-    "indentStyle": "space",
+    "indentStyle": "tab",
     "lineEnding": "crlf"
   },
   "linter": {
@@ -22,7 +22,7 @@
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "single"
+      "quoteStyle": "double"
     }
   },
   "json": {
