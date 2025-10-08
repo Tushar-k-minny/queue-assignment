@@ -1,4 +1,4 @@
-import { Connection, Channel, connect } from "amqplib";
+import { type Channel, type ChannelModel, connect } from 'amqplib';
 
 interface JobMessage {
   jobId: string;
@@ -9,8 +9,8 @@ interface JobMessage {
 }
 
 class RabbitMQPublisher {
-  private connection: any;
-  private channel: any;
+  private connection: ChannelModel | null;
+  private channel: Channel | null;
   private queue: string;
   private url: string;
   private isConnected: boolean;
@@ -18,8 +18,8 @@ class RabbitMQPublisher {
   constructor() {
     this.connection = null;
     this.channel = null;
-    this.queue = process.env.RABBITMQ_QUEUE || "job_queue";
-    this.url = process.env.RABBITMQ_URL || "amqp://localhost";
+    this.queue = process.env.RABBITMQ_QUEUE || 'job_queue';
+    this.url = process.env.RABBITMQ_URL || 'amqp://localhost';
     this.isConnected = false;
   }
 
@@ -32,19 +32,19 @@ class RabbitMQPublisher {
       await this.channel.assertQueue(this.queue, { durable: true });
 
       this.isConnected = true;
-      console.log("Connected to RabbitMQ successfully 👈");
+      console.log('Connected to RabbitMQ successfully 👈');
 
-      this.connection.on("error", (err: any) => {
-        console.log("❌RabbitMQ connection error:", err);
+      this.connection.on('error', (err: unknown) => {
+        console.log('❌RabbitMQ connection error:', err);
         this.isConnected = false;
       });
 
-      this.connection.on("close", () => {
-        console.log("▶️RabbitMQ connection closed");
+      this.connection.on('close', () => {
+        console.log('▶️RabbitMQ connection closed');
         this.isConnected = false;
       });
     } catch (error) {
-      console.error("Error connecting to RabbitMQ:", error);
+      console.error('Error connecting to RabbitMQ:', error);
       throw error;
     }
   }
@@ -53,10 +53,10 @@ class RabbitMQPublisher {
     jobId: string,
     userId: string | undefined,
     type: string,
-    payload: unknown
+    payload: unknown,
   ): Promise<boolean> {
     if (!this.channel) {
-      throw new Error("RabbitMQ channel not initialized");
+      throw new Error('RabbitMQ channel not initialized');
     }
 
     try {
@@ -71,18 +71,18 @@ class RabbitMQPublisher {
       const sent = this.channel.sendToQueue(
         this.queue,
         Buffer.from(JSON.stringify(message)),
-        { persistent: true }
+        { persistent: true },
       );
 
       if (sent) {
-        console.log(jobId, "✔️Job sent to RabbitMQ successfully");
+        console.log(jobId, '✔️Job sent to RabbitMQ successfully');
         return true;
       } else {
-        console.error(jobId, "❌Job not sent to RabbitMQ");
+        console.error(jobId, '❌Job not sent to RabbitMQ');
         return false;
       }
     } catch (error) {
-      console.error("❌Error sending job to RabbitMQ:", error);
+      console.error('❌Error sending job to RabbitMQ:', error);
       throw error;
     }
   }
@@ -91,9 +91,9 @@ class RabbitMQPublisher {
     try {
       if (this.channel) await this.channel.close();
       if (this.connection) await this.connection.close();
-      console.log("RabbitMQ connection closed successfully👈");
+      console.log('RabbitMQ connection closed successfully👈');
     } catch (error) {
-      console.error("❌Error closing RabbitMQ connection:", error);
+      console.error('❌Error closing RabbitMQ connection:', error);
       throw error;
     }
   }

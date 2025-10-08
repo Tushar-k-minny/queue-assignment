@@ -1,5 +1,5 @@
 import cors from 'cors';
-import express, { Request, Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
@@ -34,7 +34,7 @@ app.listen(PORT, async () => {
     const error = err as Error;
     console.error('⚠️  Failed to connect to RabbitMQ:', error.message);
     console.error(
-      '⚠️  Server will continue, but job publishing will retry connections'
+      '⚠️  Server will continue, but job publishing will retry connections',
     );
   }
 });

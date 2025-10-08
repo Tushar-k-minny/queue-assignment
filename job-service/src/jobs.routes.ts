@@ -1,27 +1,27 @@
-import express, { Request, Response, Router } from "express";
-import axios from "axios";
-import prisma from "./client.js";
-import { createJob, updateJobStatus } from "./jobs.services.js";
-import { getPublisher } from "./publisher.js";
-import { TypedRequest, Job, Status } from "./types.js";
+import axios from 'axios';
+import express, { type Request, type Response, type Router } from 'express';
+import prisma from './client.js';
+import { createJob, updateJobStatus } from './jobs.services.js';
 import authMiddleware, {
-  AuthenticatedRequest,
-} from "./middlewares/auth.middleware.js";
+  type AuthenticatedRequest,
+} from './middlewares/auth.middleware.js';
+import serviceAuthMiddleware from './middlewares/inter-service-auth.middleware.js';
+import { getPublisher } from './publisher.js';
 
-interface CreateJobRequest {
-  type: string;
-  payload: string;
-}
+// interface CreateJobRequest {
+//   type: string;
+//   payload: string;
+// }
 
-interface UpdateJobStatusRequest {
-  status: Status;
-  result?: string;
-  error?: string;
-}
+// interface UpdateJobStatusRequest {
+//   status: Status;
+//   result?: string;
+//   error?: string;
+// }
 
 // User service URL for validation
 const USER_SERVICE_URL =
-  process.env.USER_SERVICE_URL || "http://user-service:5001";
+  process.env.USER_SERVICE_URL || 'http://user-service:5001';
 
 // Validate user exists by calling user-service
 async function validateUser(userId: string): Promise<boolean> {
@@ -29,8 +29,8 @@ async function validateUser(userId: string): Promise<boolean> {
     const response = await axios.get(
       `${USER_SERVICE_URL}/auth/validate-user/${userId}`,
       {
-        timeout: 5000, // 5 second timeout
-      }
+        timeout: 5000,
+      },
     );
 
     return response.data.valid === true;
@@ -43,14 +43,14 @@ async function validateUser(userId: string): Promise<boolean> {
 export const JobRouter: Router = express.Router();
 
 JobRouter.get(
-  "/",
+  '/',
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({ error: "Unauthorized" });
+        res.status(401).json({ error: 'Unauthorized' });
         return;
       }
 
@@ -65,11 +65,11 @@ JobRouter.get(
       const err = error as Error;
       res.status(400).json({ error: err.message });
     }
-  }
+  },
 );
 
 JobRouter.post(
-  "/",
+  '/',
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -77,24 +77,24 @@ JobRouter.post(
       const { type, payload } = req.body;
 
       if (!userId) {
-        res.status(401).json({ error: "Unauthorized" });
+        res.status(401).json({ error: 'Unauthorized' });
         return;
       }
 
       if (!type || !payload) {
-        res.status(400).json({ error: "Invalid payload request" });
+        res.status(400).json({ error: 'Invalid payload request' });
         return;
       }
 
       // Validate that the user actually exists
       const userExists = await validateUser(userId);
       if (!userExists) {
-        res.status(403).json({ error: "Invalid user - user does not exist" });
+        res.status(403).json({ error: 'Invalid user - user does not exist' });
         return;
       }
 
       const newJob = await createJob(userId, type, payload);
-      console.log(newJob, "this is the new job");
+      console.log(newJob, 'this is the new job');
 
       const publisher = await getPublisher();
       await publisher.publishJob(newJob.id, userId, type, payload);
@@ -110,13 +110,13 @@ JobRouter.post(
       const err = error as Error;
       res
         .status(400)
-        .json({ error: "Error creating job", details: err.message });
+        .json({ error: 'Error creating job', details: err.message });
     }
-  }
+  },
 );
 
 JobRouter.get(
-  "/:jobId",
+  '/:jobId',
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -124,12 +124,12 @@ JobRouter.get(
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({ error: "Unauthorized" });
+        res.status(401).json({ error: 'Unauthorized' });
         return;
       }
 
       if (!jobId) {
-        res.status(400).json({ error: "Invalid job ID" });
+        res.status(400).json({ error: 'Invalid job ID' });
         return;
       }
 
@@ -141,7 +141,7 @@ JobRouter.get(
       });
 
       if (!job) {
-        res.status(404).json({ error: "Job not found" });
+        res.status(404).json({ error: 'Job not found' });
         return;
       }
 
@@ -155,74 +155,74 @@ JobRouter.get(
         updated_at: job.updatedAt,
       });
     } catch (error) {
-      console.error("Error fetching job:", error);
-      res.status(500).json({ error: "Failed to fetch job" });
+      console.error('Error fetching job:', error);
+      res.status(500).json({ error: 'Failed to fetch job' });
     }
-  }
+  },
 );
 
 // Route for users to update their own job status (requires authentication)
+// JobRouter.put(
+//   "/:jobId/status",
+//   authMiddleware,
+//   async (req: AuthenticatedRequest, res: Response) => {
+//     try {
+//       const { jobId } = req.params;
+//       const userId = req.user?.userId;
+//       const { status, result, error } = req.body;
+
+//       if (!userId) {
+//         res.status(401).json({ error: "Unauthorized" });
+//         return;
+//       }
+
+//       // Verify that the job belongs to the authenticated user
+//       const existingJob = await prisma.jobs.findFirst({
+//         where: {
+//           id: jobId,
+//           userId,
+//         },
+//       });
+
+//       if (!existingJob) {
+//         res.status(404).json({ error: "Job not found" });
+//         return;
+//       }
+
+//       const updatedJob = await updateJobStatus(
+//         jobId,
+//         userId,
+//         status,
+//         result,
+//         error
+//       );
+
+//       res.status(201).json({
+//         id: updatedJob.id,
+//         type: updatedJob.type,
+//         status: updatedJob.status,
+//         result: updatedJob.result,
+//         error: updatedJob.error,
+//         created_at: updatedJob.createdAt,
+//         updated_at: updatedJob.updatedAt,
+//       });
+//     } catch (error) {
+//       const err = error as Error;
+//       res.status(400).json({ error: err.message });
+//     }
+//   }
+// );
+
 JobRouter.put(
-  "/:jobId/status",
-  authMiddleware,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { jobId } = req.params;
-      const userId = req.user?.userId;
-      const { status, result, error } = req.body;
-
-      if (!userId) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
-
-      // Verify that the job belongs to the authenticated user
-      const existingJob = await prisma.jobs.findFirst({
-        where: {
-          id: jobId,
-          userId,
-        },
-      });
-
-      if (!existingJob) {
-        res.status(404).json({ error: "Job not found" });
-        return;
-      }
-
-      const updatedJob = await updateJobStatus(
-        jobId,
-        userId,
-        status,
-        result,
-        error
-      );
-
-      res.status(201).json({
-        id: updatedJob.id,
-        type: updatedJob.type,
-        status: updatedJob.status,
-        result: updatedJob.result,
-        error: updatedJob.error,
-        created_at: updatedJob.createdAt,
-        updated_at: updatedJob.updatedAt,
-      });
-    } catch (error) {
-      const err = error as Error;
-      res.status(400).json({ error: err.message });
-    }
-  }
-);
-
-// Internal route for worker service to update job status (no authentication required)
-JobRouter.put(
-  "/internal/:jobId/status",
+  '/internal/:jobId/status',
+  serviceAuthMiddleware,
   async (req: Request, res: Response) => {
     try {
       const { jobId } = req.params;
       const { status, result, error, userId } = req.body;
 
       if (!userId || !jobId) {
-        res.status(400).json({ error: "Missing required parameters" });
+        res.status(400).json({ error: 'Missing required parameters' });
         return;
       }
 
@@ -231,7 +231,7 @@ JobRouter.put(
         userId,
         status,
         result,
-        error
+        error,
       );
 
       res.status(201).json({
@@ -247,5 +247,5 @@ JobRouter.put(
       const err = error as Error;
       res.status(400).json({ error: err.message });
     }
-  }
+  },
 );

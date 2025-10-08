@@ -1,6 +1,6 @@
-import { $Enums, Prisma } from "@prisma/client";
-import prisma from "./client.js";
-import { Job } from "./types.js";
+import { $Enums } from '@prisma/client';
+import prisma from './client.js';
+import type { Job } from './types.js';
 
 const JOBTYPES = Object.keys($Enums.JobType);
 const STATUS = Object.keys($Enums.Status);
@@ -8,11 +8,11 @@ const STATUS = Object.keys($Enums.Status);
 export async function createJob(
   userId: string,
   type: string,
-  payload: string
+  payload: string,
 ): Promise<Job> {
   try {
     if (!JOBTYPES.includes(type)) {
-      throw new Error("Invalid job type");
+      throw new Error('Invalid job type');
     }
 
     return (await prisma.jobs.create({
@@ -23,7 +23,7 @@ export async function createJob(
       },
     })) as unknown as Job;
   } catch (error) {
-    throw error instanceof Error ? error : new Error("Failed to create job");
+    throw error instanceof Error ? error : new Error('Failed to create job');
   }
 }
 
@@ -32,28 +32,28 @@ export async function updateJobStatus(
   userId: string,
   status: $Enums.Status,
   result: string | null = null,
-  error: string | null = null
+  error: string | null = null,
 ): Promise<Job> {
   try {
     console.log(
-      "JobId:",
+      'JobId:',
       jobId,
-      "UserId:",
+      'UserId:',
       userId,
-      "Status:",
+      'Status:',
       status,
-      "Result:",
+      'Result:',
       result,
-      "Error:",
-      error
+      'Error:',
+      error,
     );
 
     if (!jobId || !userId || !status) {
-      throw new Error("Invalid payload");
+      throw new Error('Invalid payload');
     }
 
     if (!STATUS.includes(status)) {
-      throw new Error("Invalid Status");
+      throw new Error('Invalid Status');
     }
 
     const job = await prisma.jobs.findUnique({
@@ -64,7 +64,7 @@ export async function updateJobStatus(
     });
 
     if (!job) {
-      throw new Error("Job does not exist");
+      throw new Error('Job does not exist');
     }
 
     const updatedJob = (await prisma.jobs.update({
@@ -81,7 +81,7 @@ export async function updateJobStatus(
 
     return updatedJob;
   } catch (error) {
-    console.log("Error while updating status", error);
-    throw new Error("Could not update job status");
+    console.log('Error while updating status', error);
+    throw new Error('Could not update job status');
   }
 }
