@@ -6,18 +6,11 @@ import authMiddleware, {
   type AuthenticatedRequest,
 } from './middlewares/auth.middleware.js';
 import serviceAuthMiddleware from './middlewares/inter-service-auth.middleware.js';
+import queryJobLimiter from './middlewares/limiter.middlewares.js';
 import { getPublisher } from './publisher.js';
+import { createJobSchema, updateJobSchema } from './types.js';
 
-// interface CreateJobRequest {
-//   type: string;
-//   payload: string;
-// }
 
-// interface UpdateJobStatusRequest {
-//   status: Status;
-//   result?: string;
-//   error?: string;
-// }
 
 // User service URL for validation
 const USER_SERVICE_URL =
@@ -45,6 +38,7 @@ export const JobRouter: Router = express.Router();
 JobRouter.get(
   '/',
   authMiddleware,
+  queryJobLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.userId;
@@ -76,15 +70,25 @@ JobRouter.post(
       const userId = req.user?.userId;
       const { type, payload } = req.body;
 
+      
       if (!userId) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
 
-      if (!type || !payload) {
-        res.status(400).json({ error: 'Invalid payload request' });
+
+      const createJobPayload = {
+        type,
+        payload,
+        userId,
+      }
+
+      const isValidData = createJobSchema.safeParse(createJobPayload);
+      if (!isValidData.success) {
+        res.status(400).json({ error: 'Invalid job data' });
         return;
       }
+      
 
       // Validate that the user actually exists
       const userExists = await validateUser(userId);
@@ -93,8 +97,11 @@ JobRouter.post(
         return;
       }
 
+
+
+
       const newJob = await createJob(userId, type, payload);
-      console.log(newJob, 'this is the new job');
+   
 
       const publisher = await getPublisher();
       await publisher.publishJob(newJob.id, userId, type, payload);
@@ -118,6 +125,7 @@ JobRouter.post(
 JobRouter.get(
   '/:jobId',
   authMiddleware,
+  queryJobLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { jobId } = req.params;
@@ -221,10 +229,20 @@ JobRouter.put(
       const { jobId } = req.params;
       const { status, result, error, userId } = req.body;
 
-      if (!userId || !jobId) {
-        res.status(400).json({ error: 'Missing required parameters' });
-        return;
-      }
+     const updatePaylod={
+      jobId,
+      userId,
+      status,
+      result,
+      error
+    }
+
+  const isValidData = updateJobSchema.safeParse(updatePaylod)
+
+  if(!isValidData.success){
+    console.error("Invalid payload", isValidData.error.message)
+    res.status(400).json({ error: "Invalid payload" });
+  }
 
       const updatedJob = await updateJobStatus(
         jobId,
@@ -245,7 +263,7 @@ JobRouter.put(
       });
     } catch (error) {
       const err = error as Error;
-      res.status(400).json({ error: err.message });
+      res.status(500).json({ error: err.message });
     }
   },
 );

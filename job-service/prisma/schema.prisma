@@ -39,6 +39,6 @@ model Jobs{
   updatedAt DateTime  @updatedAt
 
 
-
+@@index([id, userId])
 }
 

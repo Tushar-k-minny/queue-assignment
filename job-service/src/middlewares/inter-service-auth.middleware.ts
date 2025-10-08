@@ -7,7 +7,7 @@ const serviceAuthMiddleware = (
 ): void => {
   try {
     const serviceToken = req.headers['x-service-token'];
-    const expectedToken = process.env.SERVICE_SECRET_TOKEN || 'secret-token';
+    const expectedToken = process.env.SERVICE_TOKEN_SECRET || 'secret-token';
 
     if (!expectedToken) {
       res.status(500).json({

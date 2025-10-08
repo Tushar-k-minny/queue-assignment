@@ -1,4 +1,6 @@
 import type { Request } from 'express';
+import z from 'zod';
+import { JOBTYPES, STATUS } from './constants.js';
 
 export type Status = 'QUEUED' | 'INPROGRESS' | 'COMPLETED' | 'FAILED';
 export type JobType =
@@ -32,3 +34,20 @@ export interface ErrorResponse {
 export interface TypedRequest<T> extends Request {
   body: T;
 }
+
+
+
+export const createJobSchema = z.object({
+  userId:z.string(),
+  payload:z.string(),
+  type:z.enum(JOBTYPES)
+})
+
+
+export const updateJobSchema = z.object({
+  status: z.enum(STATUS),
+  result: z.string().optional().nullable(),
+  error: z.string().optional().nullable(),
+  userId: z.string(),
+  jobId: z.string(),
+})
