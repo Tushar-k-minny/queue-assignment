@@ -99,7 +99,7 @@ export class JobServiceClient {
 			(error) => {
 				if (error.response?.status === 401 || error.response?.status === 403) {
 					console.error("❌ Service authentication failed!");
-					console.error("Please check SERVICE_SECRET_TOKEN configuration");
+				console.error("Please check ACCESS_TOKEN_SECRET configuration");
 				}
 				return Promise.reject(error);
 			},
@@ -108,7 +108,6 @@ export class JobServiceClient {
 
 	async updateJobStatus(
 		jobId: string,
-		userId: string,
 		status: Job["status"],
 		result: string | null = null,
 		error: string | null = null,
@@ -118,8 +117,7 @@ export class JobServiceClient {
 				status,
 				result,
 				error,
-				userId,
-			});
+				});
 			console.log(`✔️ Updated job ${jobId} status to ${status}`);
 			return response.data;
 		} catch (err) {

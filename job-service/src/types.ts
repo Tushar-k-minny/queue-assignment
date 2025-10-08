@@ -45,6 +45,6 @@ export const updateJobSchema = z.object({
   status: z.enum(STATUS),
   result: z.string().optional().nullable(),
   error: z.string().optional().nullable(),
-  userId: z.string(),
+  userId: z.string().optional(),
   jobId: z.string(),
 });

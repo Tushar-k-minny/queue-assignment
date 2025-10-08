@@ -97,7 +97,6 @@ services:
       RABBITMQ_QUEUE: job_queue
       ACCESS_TOKEN_SECRET: a-secret-access-token-with-date-3-10@2025
       USER_SERVICE_URL: http://user-service:5001
-      SERVICE_TOKEN_SECRET: this_is_a_super_secret_on_date_8-10@2025
       RABBITMQ_DLQ_QUEUE: "job_queue_dlq"
 
     ports:
@@ -127,7 +126,7 @@ services:
       JOB_SERVICE_URL: http://job-service:5002
       MAX_RETRIES: 5
       RETRY_DELAY: 5000
-      SERVICE_TOKEN_SECRET: this_is_a_super_secret_on_date_8-10@2025
+      ACCESS_TOKEN_SECRET: a-secret-access-token-with-date-3-10@2025
       RABBITMQ_DLQ_QUEUE: "job_queue_dlq"
       
     depends_on:

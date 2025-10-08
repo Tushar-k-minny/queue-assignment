@@ -238,7 +238,6 @@ JobRouter.put(
 
       const updatedJob = await updateJobStatus(
         jobId,
-        userId,
         status,
         result,
         error,

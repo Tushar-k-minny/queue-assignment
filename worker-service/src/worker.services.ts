@@ -32,7 +32,7 @@ export const config: WorkerConfig = {
 	},
 	jobService: {
 		url: process.env.JOB_SERVICE_URL || "http://localhost:5002",
-		serviceToken: process.env.SERVICE_TOKEN_SECRET || "secret-token",
+		serviceToken: process.env.ACCESS_TOKEN_SECRET || "secret-token",
 	},
 	worker: {
 		maxRetries: parseInt(process.env.MAX_RETRIES || "3", 10),
@@ -64,7 +64,7 @@ class WorkerService {
 
 		if (!config.jobService.serviceToken) {
 			console.error("❌ Service authentication failed!");
-			console.error("Please check SERVICE_SECRET_TOKEN configuration");
+			console.error("Please check ACCESS_TOKEN_SECRET configuration");
 			process.exit(1);
 		}
 	}
@@ -137,12 +137,12 @@ class WorkerService {
 		);
 
 		try {
-			await this.jobService.updateJobStatus(jobId,userId, "INPROGRESS");
+			await this.jobService.updateJobStatus(jobId, "INPROGRESS");
 
 			const result = JobProcessor.process(type, payload).toString();
 			console.log("\n✔️ Job completed:", "result:", result);
 
-			await this.jobService.updateJobStatus(jobId,userId, "COMPLETED", result);
+			await this.jobService.updateJobStatus(jobId, "COMPLETED", result);
 
 			this.channel.ack(msg);
 			console.log("Job Acknowledged for jobId:", jobId);
@@ -155,7 +155,6 @@ class WorkerService {
 			try {
 				await this.jobService.updateJobStatus(
 					jobId,
-					userId,
 					"FAILED",
 					null,
 					error instanceof Error ? error.message : String(error),

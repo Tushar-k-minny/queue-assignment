@@ -27,7 +27,7 @@ export async function createJob(
 
 export async function updateJobStatus(
   jobId: string,
-  userId: string,
+
   status: $Enums.Status,
   result: string | null = null,
   error: string | null = null,
@@ -36,8 +36,7 @@ export async function updateJobStatus(
     const job = await prisma.jobs.findUnique({
       where: {
         id: jobId,
-        userId,
-      },
+        },
     });
 
     if (!job) {
@@ -47,7 +46,6 @@ export async function updateJobStatus(
     const updatedJob = (await prisma.jobs.update({
       where: {
         id: jobId,
-        userId,
       },
       data: {
         status,

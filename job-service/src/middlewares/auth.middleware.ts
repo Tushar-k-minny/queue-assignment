@@ -14,8 +14,9 @@ export interface AuthenticatedRequest extends Request {
 
 export const verifyAccessToken = (token: string): TokenPayload => {
   try {
-    return jwt.verify(token, ACCESS_TOKEN) as TokenPayload;
-  } catch (_error) {
+  return jwt.verify(token, ACCESS_TOKEN) as TokenPayload;
+  } catch (error) {
+    console.error(error);
     throw new Error('Invalid or expired access token');
   }
 };

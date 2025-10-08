@@ -117,7 +117,7 @@ export const internalServiceLimiter = rateLimit({
   skip: (req: Request) => {
     // Skip rate limiting if valid service token is present
     const serviceToken = req.headers["x-service-token"];
-    const expectedToken = process.env.SERVICE_SECRET_TOKEN;
+    const expectedToken = process.env.ACCESS_TOKEN_SECRET ;
     return serviceToken === expectedToken;
   },
 });
