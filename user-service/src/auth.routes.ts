@@ -2,6 +2,9 @@ import express, { type Request, type Response, type Router } from "express";
 import authService from "./auth.services.js";
 import prisma from "./client.js";
 import authMiddleware from "./middlewares/auth.middleware.js";
+import limiterMiddleware, {
+  internalServiceLimiter,
+} from "./middlewares/limiter.middleware.js";
 import { refreshAccessToken } from "./token.utils.js";
 import type {
   LoginUserDTO,
@@ -18,6 +21,7 @@ interface RefreshTokenRequest {
 
 AuthRouter.post(
   "/register",
+  limiterMiddleware.createUsers,
   async (req: TypedRequest<RegisterUserDTO>, res: Response) => {
     try {
       const { email, password, name } = req.body;
@@ -39,6 +43,7 @@ AuthRouter.post(
 
 AuthRouter.post(
   "/login",
+  limiterMiddleware.loginLimiter,
   async (req: TypedRequest<LoginUserDTO>, res: Response) => {
     try {
       const { email, password } = req.body;
@@ -60,6 +65,7 @@ AuthRouter.post(
 
 AuthRouter.post(
   "/refresh",
+  limiterMiddleware.refreshTokenLimiter,
   async (req: TypedRequest<RefreshTokenRequest>, res: Response) => {
     try {
       const { refreshToken } = req.body;
@@ -98,6 +104,7 @@ AuthRouter.post(
 
 AuthRouter.post(
   "/revoke-all",
+  limiterMiddleware.authenticatedLimiter,
   authMiddleware,
   async (req: TypedRequest<unknown>, res: Response) => {
     try {
@@ -134,6 +141,7 @@ AuthRouter.get(
 // This endpoint is for internal service communication only
 AuthRouter.get(
   "/validate-user/:userId",
+  internalServiceLimiter,
   async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;

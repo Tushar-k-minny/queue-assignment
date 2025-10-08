@@ -6,12 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "predev": "prisma generate",
     "dev": "tsx  --watch --env-file=.env src/app.ts",
     "start": "node --env-file=.env dist/app.js",
     "lint": "biome check",
     "lint:write": "biome check --write",
-    "format": "biome format"
+    "format": "biome format",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +27,7 @@
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1"
@@ -31,7 +37,6 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/helmet": "^4.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.7.0",
