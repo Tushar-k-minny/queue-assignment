@@ -1,5 +1,5 @@
-import rateLimit from "express-rate-limit";
-import type { AuthenticatedRequest } from "./auth.middleware.js";
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import type { AuthenticatedRequest } from './auth.middleware.js';
 
 // Rate limiter for job creation - 10 jobs per minute per user
 const createJobLimiter = rateLimit({
@@ -8,7 +8,7 @@ const createJobLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: AuthenticatedRequest) => {
-    return req.user?.userId || req.ip || 'anonymous';
+    return req.user?.userId || ipKeyGenerator(req.ip || 'anonymous');
   },
   handler: (_, res) => {
     res.status(429).json({
@@ -30,7 +30,7 @@ const queryJobLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: AuthenticatedRequest) => {
-    return req.user?.userId || req.ip || 'anonymous';
+    return req.user?.userId || ipKeyGenerator(req.ip || 'anonymous');
   },
   handler: (_, res) => {
     res.status(429).json({
@@ -41,4 +41,4 @@ const queryJobLimiter = rateLimit({
   },
 });
 
-export default queryJobLimiter
+export default { queryJobLimiter, createJobLimiter };

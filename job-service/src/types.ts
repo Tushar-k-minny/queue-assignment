@@ -35,14 +35,11 @@ export interface TypedRequest<T> extends Request {
   body: T;
 }
 
-
-
 export const createJobSchema = z.object({
-  userId:z.string(),
-  payload:z.string(),
-  type:z.enum(JOBTYPES)
-})
-
+  userId: z.string(),
+  payload: z.string(),
+  type: z.enum(JOBTYPES),
+});
 
 export const updateJobSchema = z.object({
   status: z.enum(STATUS),
@@ -50,4 +47,4 @@ export const updateJobSchema = z.object({
   error: z.string().optional().nullable(),
   userId: z.string(),
   jobId: z.string(),
-})
+});

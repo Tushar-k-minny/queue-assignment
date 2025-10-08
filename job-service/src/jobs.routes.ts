@@ -6,11 +6,9 @@ import authMiddleware, {
   type AuthenticatedRequest,
 } from './middlewares/auth.middleware.js';
 import serviceAuthMiddleware from './middlewares/inter-service-auth.middleware.js';
-import queryJobLimiter from './middlewares/limiter.middlewares.js';
+import JobLimiter from './middlewares/limiter.middlewares.js';
 import { getPublisher } from './publisher.js';
 import { createJobSchema, updateJobSchema } from './types.js';
-
-
 
 // User service URL for validation
 const USER_SERVICE_URL =
@@ -38,7 +36,7 @@ export const JobRouter: Router = express.Router();
 JobRouter.get(
   '/',
   authMiddleware,
-  queryJobLimiter,
+  JobLimiter.queryJobLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.userId;
@@ -65,30 +63,28 @@ JobRouter.get(
 JobRouter.post(
   '/',
   authMiddleware,
+  JobLimiter.createJobLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.userId;
       const { type, payload } = req.body;
 
-      
       if (!userId) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
 
-
       const createJobPayload = {
         type,
         payload,
         userId,
-      }
+      };
 
       const isValidData = createJobSchema.safeParse(createJobPayload);
       if (!isValidData.success) {
         res.status(400).json({ error: 'Invalid job data' });
         return;
       }
-      
 
       // Validate that the user actually exists
       const userExists = await validateUser(userId);
@@ -97,11 +93,7 @@ JobRouter.post(
         return;
       }
 
-
-
-
       const newJob = await createJob(userId, type, payload);
-   
 
       const publisher = await getPublisher();
       await publisher.publishJob(newJob.id, userId, type, payload);
@@ -125,7 +117,7 @@ JobRouter.post(
 JobRouter.get(
   '/:jobId',
   authMiddleware,
-  queryJobLimiter,
+  JobLimiter.queryJobLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { jobId } = req.params;
@@ -229,20 +221,20 @@ JobRouter.put(
       const { jobId } = req.params;
       const { status, result, error, userId } = req.body;
 
-     const updatePaylod={
-      jobId,
-      userId,
-      status,
-      result,
-      error
-    }
+      const updatePaylod = {
+        jobId,
+        userId,
+        status,
+        result,
+        error,
+      };
 
-  const isValidData = updateJobSchema.safeParse(updatePaylod)
+      const isValidData = updateJobSchema.safeParse(updatePaylod);
 
-  if(!isValidData.success){
-    console.error("Invalid payload", isValidData.error.message)
-    res.status(400).json({ error: "Invalid payload" });
-  }
+      if (!isValidData.success) {
+        console.error('Invalid payload', isValidData.error.message);
+        res.status(400).json({ error: 'Invalid payload' });
+      }
 
       const updatedJob = await updateJobStatus(
         jobId,

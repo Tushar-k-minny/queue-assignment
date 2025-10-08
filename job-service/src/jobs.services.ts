@@ -1,15 +1,12 @@
-import { $Enums } from '@prisma/client';
+import type { $Enums } from '@prisma/client';
 import prisma from './client.js';
 import { JOBTYPES } from './constants.js';
-import { type Job } from './types.js';
-
-
-
+import type { Job } from './types.js';
 
 export async function createJob(
   userId: string,
   type: string,
-  payload: string
+  payload: string,
 ): Promise<Job> {
   try {
     if (!JOBTYPES.includes(type)) {
@@ -33,7 +30,7 @@ export async function updateJobStatus(
   userId: string,
   status: $Enums.Status,
   result: string | null = null,
-  error: string | null = null
+  error: string | null = null,
 ): Promise<Job> {
   try {
     const job = await prisma.jobs.findUnique({
@@ -50,7 +47,7 @@ export async function updateJobStatus(
     const updatedJob = (await prisma.jobs.update({
       where: {
         id: jobId,
-        userId
+        userId,
       },
       data: {
         status,
