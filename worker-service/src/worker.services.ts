@@ -10,6 +10,7 @@ interface WorkerConfig {
 	rabbitmq: {
 		url: string;
 		queue: string;
+		dlqQueue: string;
 		prefetch: number;
 	};
 	jobService: {
@@ -26,6 +27,7 @@ export const config: WorkerConfig = {
 	rabbitmq: {
 		url: process.env.RABBITMQ_URL || "amqp://localhost",
 		queue: process.env.RABBITMQ_QUEUE || "job_queue",
+		dlqQueue: process.env.RABBITMQ_DLQ_QUEUE || "job_queue_dlq",
 		prefetch: parseInt(process.env.PREFETCH_COUNT || "1", 10),
 	},
 	jobService: {
@@ -60,7 +62,6 @@ class WorkerService {
 		);
 		this.isShuttingDown = false;
 
-		//token presence validation:
 		if (!config.jobService.serviceToken) {
 			console.error("❌ Service authentication failed!");
 			console.error("Please check SERVICE_SECRET_TOKEN configuration");
@@ -72,27 +73,37 @@ class WorkerService {
 		let retries = 5;
 		while (retries) {
 			try {
-				console.log(`Connecting to RabbitMQ trial: ${retries}  👈`);
+				console.log(`Connecting to RabbitMQ trial: ${retries}`);
 
 				this.connection = await connect(config.rabbitmq.url);
 				this.channel = await this.connection.createChannel();
 
-				await this.channel.assertQueue(config.rabbitmq.queue, {
+
+				await this.channel.assertQueue(config.rabbitmq.dlqQueue, {
 					durable: true,
 				});
+
+				await this.channel.assertQueue(config.rabbitmq.queue, {
+					durable: true,
+					arguments: {
+						"x-dead-letter-exchange": "",
+						"x-dead-letter-routing-key": config.rabbitmq.dlqQueue,
+					},
+				});
+
 				await this.channel.prefetch(config.rabbitmq.prefetch);
 
 				console.log(
-					`✔️ Connected to RabbitMQ successfully to the queue ${config.rabbitmq.queue} 👈`,
+					`✔️ Connected to RabbitMQ successfully to the queue ${config.rabbitmq.queue}`,
 				);
 
 				this.connection.on("error", (err: unknown) => {
-					console.log("❌RabbitMQ connection error:", err);
+					console.log("❌ RabbitMQ connection error:", err);
 				});
 
 				this.connection.on("close", () => {
 					if (!this.isShuttingDown) {
-						console.log("⚠️  RabbitMQ connection closed. Reconnecting...");
+						console.log("⚠️ RabbitMQ connection closed. Reconnecting...");
 						setTimeout(() => this.connect(), 5000);
 					}
 				});
@@ -118,29 +129,26 @@ class WorkerService {
 		const { jobId, type, payload, userId } = jobData;
 
 		console.log(
-			"\n✔️Job received from RabbitMQ successfully with jobId:",
-			jobId,
-			"userId:",
-			userId,
-			"type:",
-			type,
-			"payload:",
-			payload,
+			"\n✔️ Job received from RabbitMQ successfully",
+			"jobId:", jobId,
+			"userId:", userId,
+			"type:", type,
+			"payload:", payload,
 		);
 
 		try {
-			await this.jobService.updateJobStatus(jobId, userId, "INPROGRESS");
+			await this.jobService.updateJobStatus(jobId,userId, "INPROGRESS");
 
 			const result = JobProcessor.process(type, payload).toString();
-			console.log("\n✔️Job completed:", "result:", result);
+			console.log("\n✔️ Job completed:", "result:", result);
 
-			await this.jobService.updateJobStatus(jobId, userId, "COMPLETED", result);
+			await this.jobService.updateJobStatus(jobId,userId, "COMPLETED", result);
 
 			this.channel.ack(msg);
-			console.log("job Acknowledged for jobId:", jobId);
+			console.log("Job Acknowledged for jobId:", jobId);
 		} catch (error) {
 			console.error(
-				`❌Job failed for jobId: ${jobId}`,
+				`❌ Job failed for jobId: ${jobId}`,
 				error instanceof Error ? error.message : String(error),
 			);
 
@@ -154,7 +162,7 @@ class WorkerService {
 				);
 			} catch (updateError) {
 				console.error(
-					`❌Job failed for jobId: ${jobId}`,
+					`❌ Failed to update job status for jobId: ${jobId}`,
 					updateError instanceof Error
 						? updateError.message
 						: String(updateError),
@@ -175,10 +183,9 @@ class WorkerService {
 				setTimeout(() => {
 					if (this.channel) {
 						this.channel.sendToQueue(config.rabbitmq.queue, msg.content, {
-							...msg.properties,
 							persistent: true,
 							headers: {
-								...msg.properties.headers,
+								...(msg.properties.headers || {}),
 								"x-retry-count": retryCount + 1,
 							},
 						});
@@ -187,9 +194,9 @@ class WorkerService {
 				}, delay);
 			} else {
 				console.error(
-					`❌ Job ${jobId} failed after ${config.worker.maxRetries} retries`,
+					`❌ Job ${jobId} failed after ${config.worker.maxRetries} retries, sending to DLQ`,
 				);
-				this.channel.ack(msg);
+				this.channel.nack(msg, false, false);
 			}
 		}
 	}

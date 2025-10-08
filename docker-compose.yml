@@ -71,6 +71,7 @@ services:
       DB_URL: postgresql://tushar:tushar0134@user-db:5432/user_db
       ACCESS_TOKEN_SECRET: a-secret-access-token-with-date-3-10@2025
       REFRESH_TOKEN_SECRET: a-refrest-access-token-with-date-3-10@2025
+      
     ports:
       - 5001:5001
     depends_on:
@@ -97,6 +98,7 @@ services:
       ACCESS_TOKEN_SECRET: a-secret-access-token-with-date-3-10@2025
       USER_SERVICE_URL: http://user-service:5001
       SERVICE_TOKEN_SECRET: this_is_a_super_secret_on_date_8-10@2025
+      RABBITMQ_DLQ_QUEUE: "job_queue_dlq"
 
     ports:
       - 5002:5002
@@ -126,6 +128,8 @@ services:
       MAX_RETRIES: 5
       RETRY_DELAY: 5000
       SERVICE_TOKEN_SECRET: this_is_a_super_secret_on_date_8-10@2025
+      RABBITMQ_DLQ_QUEUE: "job_queue_dlq"
+      
     depends_on:
       job-db:
         condition: service_healthy
